@@ -1,0 +1,399 @@
+---
+title: "Quantiful Submission"
+author: "Louis Lin"
+date: "20/08/2019"
+output: 
+  html_document:
+    includes:
+      after_body: footer.html
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+<sub><sup>**NB**: this document is produced as an html file for aesthetic purposes and includes both the report and code for cohesiveness. I apologise if this is over 8 pages long.</sup></sub>
+
+## Task 1
+
+The initial read-in data is stored in `raw`:
+
+```{r 1a, message=FALSE, cache=TRUE}
+raw <- read_csv("ufo.csv")
+```
+
+```{r 1b, echo=FALSE}
+head(raw)
+```
+
+Due to the length of `summary(raw)` I have elected to exclude it from this report, but it was used to check for extreme or unusual data. The data contains `NA` values which we will clean later. 
+
+```{r 1c, results=FALSE}
+summary(raw)
+```
+
+## Tasks 2 and 3
+
+### Number of sightings by year and continent
+
+We first group the raw data by `year` and `continent`, then sum the sightings accordingly. Observations are dropped if the row contains any `NA` values.
+
+```{r 2a, cache=TRUE}
+yr_cont <- raw %>% 
+  group_by(year,continent) %>% 
+  dplyr::summarise(count=n())  %>% 
+  drop_na(colnames(~.))
+```
+
+Figure 1 below illustrates the result.
+
+```{r 2b,  fig.align="center", fig.cap="**Figure 1**: Number of UFO sightings by year and continent.", echo=FALSE}
+yr_cont %>% ggplot(aes(x=year,y=count,color=continent,group=continent)) + 
+  geom_line() + 
+    labs(x="Year", y="Number of Sightings", color="Continent") +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    scale_x_continuous(breaks = seq(min(yr_cont$year), max(yr_cont$year), by = 10))
+```
+
+In Figure 1, we observe that North Americans have reported significantly more UFO sightings than any other continent. As to why this is the case, I hypothesise that North America, being the land of the free, have always been vocal about their thoughts. Given the American Government's rather spotted history with their *secret* UFO program and the infamous notion that the government is hiding something from its people, North Americans have more reason to believe what they allegedly see. Moreover, their belief is fuelled further by their own Navy pilots reporting such cases, and so the theory is that we see what we believe so there is an intrinsic bias toward reporting sightings. 
+
+Given North America's overwhelming statistics, we exclude it in Figure 2 below to give us a better perspective of sightings from the other continents.
+
+```{r 2c, fig.align="center", fig.cap="**Figure 2**: Number of UFO sightings by year and continent excluding North America.", echo=FALSE}
+yr_cont %>% filter(continent != "North America") %>% 
+  ggplot(aes(x=year,y=count,color=continent,group=continent)) + 
+    geom_line() + 
+    labs(x="Year", y="Number of Sightings", color="Continent") +
+    theme(plot.title = element_text(hjust = 0.5)) + 
+    scale_x_continuous(breaks = seq(min(yr_cont$year), max(yr_cont$year), by = 10))
+```
+
+In Figures 1 and 2, we see that across all continents, sightings started in the late 1940's, spiked in the 2000's and have declined rapidly in the 2010's. I suspect this is reflective of "UFO culture" which, in turn, takes from social and cultural ideas. The rise in popularity of extraterrestrials in science-fiction starting in the 50's would explain the trend observed in the plot above. Furthermore, the coming of the space-age in the late 60's and through the 70's would also play into effect. In the age of information and technology, it is likely that the exchange of witness experiences could only play further into beliefs, *argumentum ad populum*. With recording technoloy came a slew of home videos and amateur footage, and a new wave of reported sightings.
+
+I would theorise that the recent decline in sightings may be due to a societal awareness of false information. Modern technology has allowed us to manipulate images and information easier than ever, and this has resulted in a tendency to be more critical of what we read and hear. And if the laugh reacts on FaceBook UFO posts are any indication of our beliefs, then the fall in UFO sightings are nothing but expected.
+
+### Number of sightings by hour of day
+
+We apply the same method as above to generate Figures 3 to 5. 
+
+```{r 2d, cache=TRUE}
+hr <- raw %>% 
+  group_by(hour_of_day) %>% 
+  dplyr::summarise(count=n())  %>% 
+  drop_na(colnames(~.)) %>%
+  filter(hour_of_day %in% c(0:23))
+```
+
+```{r 2e, fig.align="center", fig.cap="**Figure 3**: Number of UFO sightings by hour of day worldwide.", cache=TRUE, echo=FALSE}
+hr %>%  ggplot(aes(x=as.factor(hour_of_day),y=count)) + 
+  geom_bar(stat="identity") +
+  labs(x="Hour of Day", y="Number of Sightings") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_y_continuous(breaks=seq(0,plyr::round_any(max(hr$count),1000),1000))
+```
+
+Assuming all sightings were reported using relative timezones, it is no surprised that the majority of reports are during the night. During the day, flying objects are more identifiable, such as planes and helicopters. At night, it is difficult to distinguish between an aircraft and a UFO. In Figure 3, from 00:00 to 08:00, we see a decline in sightings as less people are awake so proportionally speaking there should be less reports. From 08:00 to 16:00, sightings increase but marginally probably as most people are still at work or in school and have not had an opportunity to look at the sky. As the populations begin to leave school or get off work and have the freedom to observe the skies, there is an increase in sightings. Coupled with poor visibility and tiredness from the day, it is self-explanatory why sightings drastically increase and peak at 21:00. Then as people head to bed, reports dwindle once more. 
+
+### Number of sightings by month
+
+```{r 2f, cache=TRUE}
+mth <- raw %>% 
+  group_by(month) %>% 
+  dplyr::summarise(count=n())  %>% 
+  drop_na(colnames(~.)) %>%
+  filter(month %in% c(1:12))
+```
+
+```{r 2g, fig.align="center", fig.cap="**Figure 4**: Number of UFO sightings by month worldwide.", cache=TRUE, echo=FALSE}
+mth %>%  ggplot(aes(x=as.factor(month),y=count)) + 
+  geom_bar(stat="identity") +
+  labs(x="Month", y="Number of Sightings") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_y_continuous(breaks=seq(0,plyr::round_any(max(mth$count),1000),1000))
+```
+
+As we saw in Figure 1, a very significant proportion of total sightings are from North America. In Figure 2, the second most sightings was observed to be Europe. Thus, it stands to reason that June, July, and August, the three months of summer in the northern hemisphere, have the most reported UFO sightings. In general, people are outdoors more during the day and night in summer and Figure 4 is congruent with this theory. 
+
+### Number of sightings by day of week
+
+The `ordered` function is used to produce a plot in chronological order.
+
+```{r 2h, cache=TRUE}
+day <- raw %>% 
+  group_by(day_of_week) %>% 
+  dplyr::summarise(count=n())  %>% 
+  drop_na(colnames(~.))
+  
+day$day_of_week <- ordered(day$day_of_week,levels=c("Mon","Tues","Wed","Thurs","Fri","Sat","Sun"))
+```
+
+```{r 2i, fig.align="center", fig.cap="**Figure 5**: Number of UFO sightings by day of week worldwide.", cache=TRUE, echo=FALSE}
+day %>%  ggplot(aes(x=as.factor(day_of_week),y=count)) + 
+  geom_bar(stat="identity") +
+  labs(x="Day of Week", y="Number of Sightings") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_y_continuous(breaks=seq(0,plyr::round_any(max(day$count),1000),1000))
+```
+
+We have two theories thus far: (1) Sightings are more common at night and (2) sightings are more common when people are outdoors. In correspondance with Figure 5 above, this leads me to believe that Saturdays have the most reports as more people are outdoors on Saturday nights. Comparatively, fewer people will be out on a Sunday night (due to work the following morning), so there are fewer reports, but still more than Monday through to Thursday when fewer people will be outdoors both during the day and night. Fridays have more reportings than Sundays, again, perhaps due to more people being out during Friday night. 
+
+### Top 10 most popular UFO shapes
+
+We proceed to group observations by `shape` and order by frequency, then use `slice` function to filter the top 10. 
+
+```{r 2j, cache=TRUE}
+top_shape <- raw %>%
+  group_by(shape) %>%
+  dplyr::summarise(count=n()) %>%
+  arrange(desc(count)) %>%
+  slice(1:10) 
+```
+
+We apply the `factor` function to produce a nicer plot (maintain plotting order).
+
+```{r 2k, cache=TRUE}
+top_shape$shape <- factor(top_shape$shape, levels=unique(top_shape$shape))
+```
+
+```{r 2l, fig.align="center", fig.cap="**Figure 6**: Top 10 most popular shapes of reported UFO sightings.", echo=FALSE, cache=TRUE}
+top_shape %>%  ggplot(aes(x=shape,y=count,fill=shape)) + 
+  geom_bar(stat="identity") +
+  labs(x="Shape", y="Number of Sightings") +
+  coord_flip() +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "None") +
+  scale_x_discrete(limits = rev(levels(top_shape$shape))) +
+  scale_y_continuous(breaks=seq(0,plyr::round_any(max(top_shape$count),2000,ceiling),2000))
+```
+
+From Figure 6, we see that `light` is, by far, the most commonly reported shape. Although I would disagree that light is a shape, the point is that at night, when UFO's are more often reported, the only way of seeing anything is if it is emitting light. It stands to reason that this is the case for these results. 
+
+`circle`, `sphere`, `disk`, and `oval` are all geometrically similar in 2D plane (as is observed from the ground) and their appearance in the top 10 corresponds to popular depictions of ringed-dome-shaped extraterrestrial spacecrafts. 
+
+`triangle` is more commonly reported than suspected. My theory is that these were stealth aircrafts or triangular jets such as the Avro Vulcans. In fact, most commercial aircrafts use bright white anti-collision lights during cruise. These are located on wingtips and the tail and can be seen from the ground. This forms a triangle which can be misidentified as a UFO. 
+
+`fireball` is the fourth most reported shape; three possibilities are: (1) a realistic object entering the atmosphere (e.g. stage 1 of a rocket, meteor, satellite deorbit), (2) an aircraft crashing, or (3) a real UFO burning. The most likely is (1), in fact, many people reported SpaceX's second stage burn as possible UFO sightings. 
+
+### Top 10 countries where UFOs were sighted most
+
+The same method as above is applied to the top 10 countries with a few modifications for plotting and readibility purposes.
+
+```{r 2m, cache=TRUE}
+top_ctry <- raw %>%
+  dplyr::rename(ctry=country_clean) %>%
+  group_by(ctry) %>%
+  dplyr::summarise(count=n()) %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+top_ctry$ctry[top_ctry$ctry=="United States of America"] <- "USA"
+top_ctry$ctry[is.na(top_ctry$ctry)] <- "Unknown"
+
+top_ctry$ctry <- factor(top_ctry$ctry, levels=unique(top_ctry$ctry))
+```
+
+```{r 2n, fig.align="center", fig.cap="**Figure 7**: Top 10 most reported UFO sightings by country.", cache=TRUE, echo=FALSE}
+top_ctry %>%  ggplot(aes(x=ctry,y=count,fill=ctry)) + 
+  geom_bar(stat="identity") +
+  geom_text(aes(label=count), hjust=0.5, size=3) +
+  labs(x="Country", y="Number of Sightings") +
+  coord_flip() +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "None") +
+  scale_x_discrete(limits = rev(levels(top_ctry$ctry))) +
+  scale_y_continuous(breaks=seq(0,plyr::round_any(max(top_ctry$count),5000),5000))
+```
+
+As seen in Figure 1, North America had the most reported sightings so it stands to reason that USA and Canada would have the most and second most reports. As discussed previously, the US Government have "leaked" involvements with UFO's and the US population grow ever more concerned, believing that this must be the case. Canada comes in second due to their geopolitical ties with the US, including both geographical proximity and cultural similarities. 
+
+`Unknown` could be due to witnesses being unwilling to give away their location for privacy reasons. It may also be due to older data; perhaps older reports did not include a location field. 
+
+## Task 4
+
+In the following code chunk, I've loaded the `tm`, `stringr`, and `tidytext` packages to help with string manipulation. 
+
+```{r 4a, message=FALSE}
+library(tm)
+library(stringr)
+library(tidytext)
+
+comment <- raw$comments %>% 
+  str_replace_all("&#44"," ") %>% 
+  tolower() %>% 
+  removePunctuation() %>%
+  removeWords(stopwords("english")) %>%
+  data.frame() %>%
+  lapply(as.character)
+```
+
+As this tasks only requires the `comments` column, I've excluded the rest of the dataframe. I also piped the column through a `str_replace_all` function first. This reduces the runtime for `tolower` and eliminates `"44"` only if it is preceded by `"&#"`. If `removePunctuation` was run before `str_replace_all` with `"44"` then valid inputs of `"44"` may be discarded.
+
+Stop words are removed and the output is transformed into a dataframe and converted to a column of type character. 
+
+Finally, the output is transformed into a term document matrix to perform frequency count and Figure 8 is produced.
+
+```{r 4b, cache=TRUE}
+tdm <- Corpus(VectorSource(comment)) %>% 
+  TermDocumentMatrix() %>% 
+  as.matrix()
+
+sort_tdm <- sort(rowSums(tdm),decreasing=TRUE)
+
+word_freq <- data.frame(word = names(sort_tdm),freq=sort_tdm) %>% 
+  slice(1:10)
+
+word_freq$word <- factor(word_freq$word, levels=unique(word_freq$word))
+```
+
+```{r 4c, fig.align="center", fig.cap="**Figure 8**: 10 most frequently used words in the `comments` column.", cache=TRUE, echo=FALSE}
+word_freq %>%  ggplot(aes(x=word,y=freq,fill=word)) + 
+  geom_bar(stat="identity") +
+  labs(x="Word", y="Frequency") +
+  coord_flip() +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "None") +
+  scale_x_discrete(limits = rev(levels(word_freq$word))) +
+  scale_y_continuous(breaks=seq(0,plyr::round_any(max(word_freq$freq),2000),2000))
+```
+
+## Task 5
+
+Let's load `padr` and `lubridate` to help with manipulating time series data.
+
+```{r 5a}
+library(padr)
+library(lubridate)
+```
+
+The raw data does not contain incremental rows of dates so we proceed to pad it out using `padr`'s `pad` function. But first we pipe the raw data through a grouping by `date` and sum the number of sightings accordingly. A final `group_by` allows us to perform a summation by month. 
+
+```{r 5b, message=FALSE}
+series_data <- raw %>% 
+  group_by(date) %>% 
+  dplyr::summarise(count=n()) %>% 
+  na.omit() %>% 
+  pad() %>%
+  fill_by_value() %>%
+  group_by(month=floor_date(date,"month")) %>%
+  summarise(count=sum(count))
+```
+
+We then transform the data into a time series type data using `ts` to produce Figure 9.  
+
+```{r 5d, fig.align="center", fig.cap="**Figure 9**: Time series plot of yearly UFO sightings from 1906 -- 2014."}
+time_series <- series_data$count %>% ts(frequency = 12, start=c(1906,11))
+
+plot(time_series)
+```
+
+Figure 9 doesn't look great as there's very little activity in the 20th century compared to the 21st. Figure 10 below gives us a better idea of recent activity. 
+
+```{r 5e, fig.align="center", fig.cap="**Figure 10**: Time series plot of yearly UFO sightings from 1990 -- 2014.", echo=FALSE}
+plot(time_series,xlim=c(1990,2014))
+```
+
+An additive model doesn't look great for this time series so we'll try log transforming the data.
+
+```{r 5f}
+log_time_series <- log(time_series)
+```
+
+```{r 5g, fig.align="center", fig.cap="**Figure 11**: Time series plot of logged yearly UFO sightings from 1990 -- 2014.", echo=FALSE}
+plot(log_time_series,xlim=c(1990,2014))
+```
+
+Figure 11 looks much better.
+
+However, as our data contained values of 0, logging the time series has resulted in undefined values (namely `-Inf`). So we proceed to drop all observations prior to and including the most recent month with no observations.
+
+```{r 5h}
+library(zoo)
+log_time_series <- as.ts(tail(as.zoo(log_time_series), -max(which(log_time_series==-Inf))))
+```
+
+We can now decompose the time series to analyse its components.
+
+```{r 5i, fig.align="center"}
+decomposed <- decompose(log_time_series)
+plot(decomposed)
+```
+
+Both the seasonality and randomness look string, and the trend appears to steaily increase from around 2 in 1981 to 6 in 2014. 
+
+Let's now produce a one-year forecast. Our log-transformed time series has an increasing trend with seasonality so we'll opt to fit the data with Holt-Winters exponential smoothing. 
+
+```{r 5j, fig.align="center"}
+ufo_fit <- HoltWinters(log_time_series)
+plot(ufo_fit)
+  legend(2002, 1.5, legend=c("Time series", "Forecasted"), lwd=c(1,1), col=c("black", "red"))
+```
+
+We see the forecast performs rather well; in particular, seasonal effects are captured with relatively good accuracy. We'll use Holt-Winters to forecast sightings one year on.
+
+```{r 5k, fig.align="center"}
+ufo_forecast <- forecast:::forecast.HoltWinters(ufo_fit, h=12)
+forecast:::plot.forecast(ufo_forecast, xlim=c(2005,2016))
+```
+
+We'll make a correlogram and carry out the Ljung-Box test to investigate our predictive model. 
+
+```{r 5l, fig.align="center"}
+acf(ufo_forecast$residuals, lag.max=20, na.action = na.pass)
+Box.test(ufo_forecast$residuals, lag=20, type="Ljung-Box",)
+```
+
+The in-sample forecast errors are not all within the bounds for lags 1-20. Furthermore, the p-value from the Ljung-Box test is 0.047, which means there may be dependence between observations. This would make sense as earlier in this document, I theorised that sightings are heavily influence by trending cultures. It is likely that the frequency of reported sightings can have effects on subsequent reportings. Thus, we may need to use an ARIMA model to fit our time series.
+
+Due to lack of time, I will ignorantly round the p-value up to 0.05 and proceed with the forecast.
+
+```{r 5m, echo=FALSE}
+plotForecastErrors <- function(forecasterrors)
+  {
+     # make a histogram of the forecast errors:
+     mybinsize <- IQR(forecasterrors)/4
+     mysd   <- sd(forecasterrors)
+     mymin  <- min(forecasterrors) - mysd*5
+     mymax  <- max(forecasterrors) + mysd*3
+     # generate normally distributed data with mean 0 and standard deviation mysd
+     mynorm <- rnorm(10000, mean=0, sd=mysd)
+     mymin2 <- min(mynorm)
+     mymax2 <- max(mynorm)
+     if (mymin2 < mymin) { mymin <- mymin2 }
+     if (mymax2 > mymax) { mymax <- mymax2 }
+     # make a red histogram of the forecast errors, with the normally distributed data overlaid:
+     mybins <- seq(mymin, mymax, mybinsize)
+     hist(forecasterrors, col="red", freq=FALSE, breaks=mybins)
+     # freq=FALSE ensures the area under the histogram = 1
+     # generate normally distributed data with mean 0 and standard deviation mysd
+     myhist <- hist(mynorm, plot=FALSE, breaks=mybins)
+     # plot the normal curve as a blue line on top of the histogram of forecast errors:
+     points(myhist$mids, myhist$density, type="l", col="blue", lwd=2)
+  }
+```
+
+We'll now check if model assumptions are true.
+
+```{r 5n, fig.align="center"}
+plot.ts(ufo_forecast$residuals)
+plotForecastErrors(na.omit(ufo_forecast$residuals)) 
+```
+
+Our errors have roughly constant variance and are approximately normally distributed with mean zero. 
+
+### Summary
+
+In summary, we have autocorrelations exceeding lags 1-20 and our p-value also suggests that this may be the case. Our assumptions are not completely valid so there may be better predictors thatn Holt-Winters exponential smoothing for this time series. 
+
+## Works Cited
+
+“Black Triangle.” RationalWiki, [rationalwiki.org/wiki/Black_triangle](https://en.wikipedia.org/wiki/Black_triangle).
+
+Jaekl, Philip. “What Is behind the Decline in UFO Sightings?” *The Guardian*, Guardian News and Media, 21 Sept. 2018, [www.theguardian.com/world/2018/sep/21/what-is-behind-the-decline-in-ufo-sightings](https://www.theguardian.com/world/2018/sep/21/what-is-behind-the-decline-in-ufo-sightings).
+
+Porter, Tom. “US Senators Reportedly Got a Classified Briefing on UFOs after Navy Pilots Reported Seeing Spherical Objects Flying at 'Hypersonic Speed'.” *Business Insider Australia*, Business Insider Australia, 20 June 2019, [www.businessinsider.com.au/senators-briefed-on-ufo-sightings-by-navy-pilots-report-2019-6?r=US&IR=T](https://www.businessinsider.com.au/senators-briefed-on-ufo-sightings-by-navy-pilots-report-2019-6?r=US&IR=T).
+
+“Savvy Passenger Guide to Airplane Lights.” *AeroSavvy*, 8 Dec. 2017, [aerosavvy.com/airplane-lights/](https://aerosavvy.com/airplane-lights/).
+
+“UFOs in Fiction.” *Wikipedia*, Wikimedia Foundation, 6 Aug. 2019, [en.wikipedia.org/wiki/UFOs_in_fiction](https://en.wikipedia.org/wiki/UFOs_in_fiction).
+
+“Using R for Time Series Analysis¶.” *Using R for Time Series Analysis - Time Series 0.2 Documentation*, [a-little-book-of-r-for-time-series.readthedocs.io/en/latest/src/timeseries.html](https://a-little-book-of-r-for-time-series.readthedocs.io/en/latest/src/timeseries.html).
